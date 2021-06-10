@@ -143,7 +143,7 @@ process bowtie2_mappings {
     bowtie2 --local --no-unal -k 30 --un ${name}.trim.fastq.unAlign \
         -D ${params.tryTimes} -R 10 -L ${params.seedLength} -N ${params.mismatch} \
         -p ${task.cpus} --mp 3  -x ${params.genome} \
-        -1 ${name}.R1.collapsed.trimmed.fastq -2 ${name}.R2.collapsed.trimmed.fastq \
+        -1 trimmed_reads1 -2 trimmed_reads2 \
         -S ${name}.trim.fastq.raw_mapping.sam 2> ${name}.mapping.log
 
     perl ${baseDir}/scripts/parse_bam_best_random.pl ${name}.trim.fastq.raw_mapping.sam > ${name}.mapped.best.sam
@@ -154,7 +154,7 @@ process bowtie2_mappings {
     /mnt/software//bin/sambamba sort  ${name}.mapped.best.bam
     
     awk '{if(NR==1){tot=\$1};if(NR==3){unmapped=\$1};if(NR==4){unique=\$1}}END{print tot"\t"tot-unmapped"\t"unique}' ${name}.mapping.log > ${name}.mapped.read_counts.txt
-    
+
     rm -f ${name}.trim.fastq.raw_mapping.sam ${name}.mapped.best.sam ${name}.R1.collapsed.trimmed.fastq ${name}.R2.collapsed.trimmed.fastq ${name}.mapped.best.bam
 
     """
@@ -215,7 +215,7 @@ process mutation_calling {
     mv ./rf_count/${name}.rci ${name}.rci 
     
     ~/tools/RNAFramework/rf-rctools view  ${name}.rc -t  |\
-        awk '{if(NF==1){gene=$1};if(NF==3){ print gene"\t"$0 } }' |\
+        awk '{if(NF==1){gene=\$1};if(NF==3){ print gene"\t"\$0 } }' |\
         pigz -c -p ${task.cpus}> ${name}.mutation.tsv.gz
     """
 }
