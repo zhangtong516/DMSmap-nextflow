@@ -89,7 +89,7 @@ process collapse_reads {
         dedupe optical spany adjacent
 
 
-    cat ${trim_5end_read1} | wc -l | awk '{print "raw_reads\t" \$1/4}' > ${name}.collapsed.read_counts.txt
+    zcat ${trim_5end_read1} | wc -l | awk '{print "raw_reads\t" \$1/4}' > ${name}.collapsed.read_counts.txt
     zcat ${name}.R1.trimmed.collapsed.fq.gz | wc -l | awk '{print "collapsed_reads\t"\$1/4}' >> ${name}.collapsed.read_counts.txt
 
     """
@@ -99,7 +99,7 @@ process trim_adaptor {
     tag "${name}"
     publishDir "${params.trimSeqDir}", mode: 'copy'
     input:
-    set val(name), file(trimmed_reads1), file(trimmed_reads2) from collapsed_reads  
+    set val(name), file(collapsed_read1), file(collapsed_read2) from collapsed_reads  
 
     
     output:
@@ -113,7 +113,7 @@ process trim_adaptor {
     /mnt/projects/wenm/rnaStructure/ming/miniconda3/bin/cutadapt -j ${task.cpus} -n 2 -a ${params.nextera_adp1} -g ${params.nextera_adp2} \
         -m ${params.minLength} -q 20 -O 1 \
         -o ${name}.R1.collapsed.trimmed.fastq.gz -p ${name}.R2.collapsed.trimmed.fastq.gz \
-        ${trimmed_reads1} ${trimmed_reads2} > ${name}.trimAdaptor.log
+        ${collapsed_read1} ${collapsed_read2} > ${name}.trimAdaptor.log
     
     perl ${baseDir}/scripts/parse_trim_log.pl ${name}.trimAdaptor.log  > ${name}.read.trim.log.sum
 
@@ -143,7 +143,7 @@ process bowtie2_mappings {
     bowtie2 --local --no-unal -k 30 --un ${name}.trim.fastq.unAlign \
         -D ${params.tryTimes} -R 10 -L ${params.seedLength} -N ${params.mismatch} \
         -p ${task.cpus} --mp 3  -x ${params.genome} \
-        -1 trimmed_reads1 -2 trimmed_reads2 \
+        -1 ${trimmed_reads1} -2 ${trimmed_reads2} \
         -S ${name}.trim.fastq.raw_mapping.sam 2> ${name}.mapping.log
 
     perl ${baseDir}/scripts/parse_bam_best_random.pl ${name}.trim.fastq.raw_mapping.sam > ${name}.mapped.best.sam
