@@ -240,12 +240,12 @@ process mutation_calling {
     ~/tools/RNAFramework/rf-count -t ${task.cpus} -wt ${task.cpus} \
         -r -m -f ${params.genome} ${mapped_sam_file} 
 
-    mv ./rf_count/${name}.rc ${name}.rc
-    mv ./rf_count/${name}.rci ${name}.rci 
+    mv ./rf_count/${name}.merged.rc ${name}.rc
+    mv ./rf_count/index.rci ${name}.rci 
     
     ~/tools/RNAFramework/rf-rctools view  ${name}.rc -t  |\
         awk '{if(NF==1){gene=\$1};if(NF==3){ print gene"\t"\$0 } }' |\
-        pigz -c -p ${task.cpus}> ${name}.mutation.tsv.gz
+        pigz -c -p ${task.cpus} > ${name}.mutation.tsv.gz
     """
 }
 
